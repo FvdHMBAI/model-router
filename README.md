@@ -1,5 +1,7 @@
 # model-router
 
+[![Part of AgentStack](https://img.shields.io/badge/Part%20of-AgentStack-blue?style=flat-square)](https://github.com/FvdHMBAI/agent-stack)
+
 [![CI](https://github.com/FvdHMBAI/model-router/actions/workflows/ci.yml/badge.svg)](https://github.com/FvdHMBAI/model-router/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
