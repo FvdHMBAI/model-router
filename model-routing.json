@@ -1,0 +1,125 @@
+{
+  "_comment": "Central LLM model routing config. Each agent/job gets a tier, each tier gets a model. Always pick the lowest tier that handles the task. The effort field is the strongest cost lever on current models.",
+  "tiers": {
+    "heavy": {
+      "description": "Complex tasks: debugging, architecture, security, strategy",
+      "provider": "anthropic",
+      "model": "claude-opus-5",
+      "cli_name": "opus",
+      "cost_per_1k_input": 0.015,
+      "cost_per_1k_output": 0.075,
+      "max_output_tokens": 16384,
+      "fallback": "standard",
+      "effort": "high"
+    },
+    "standard": {
+      "description": "Routine: tickets, deployments, content, code reviews",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5",
+      "cli_name": "sonnet",
+      "cost_per_1k_input": 0.003,
+      "cost_per_1k_output": 0.015,
+      "max_output_tokens": 8192,
+      "fallback": "light",
+      "effort": "medium"
+    },
+    "light": {
+      "description": "Simple: classification, formatting, health checks",
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5",
+      "cli_name": "haiku",
+      "cost_per_1k_input": 0.0008,
+      "cost_per_1k_output": 0.004,
+      "max_output_tokens": 4096,
+      "fallback": "local"
+    },
+    "local": {
+      "description": "Local: classification, docs, simple analysis, triage",
+      "provider": "ollama",
+      "model": "qwen3:8b",
+      "cli_name": null,
+      "cost_per_1k_input": 0,
+      "cost_per_1k_output": 0,
+      "max_output_tokens": 4096,
+      "fallback": "light"
+    },
+    "local-fast": {
+      "description": "Local ultra-light: fast classification, keyword extraction",
+      "provider": "ollama",
+      "model": "qwen2.5:1.5b",
+      "cli_name": null,
+      "cost_per_1k_input": 0,
+      "cost_per_1k_output": 0,
+      "max_output_tokens": 2048,
+      "fallback": "local"
+    },
+    "gemini": {
+      "description": "Google Gemini: cross-review, video analysis, large contexts",
+      "provider": "google",
+      "model": "gemini-2.5-flash",
+      "cli_name": null,
+      "cost_per_1k_input": 0.00015,
+      "cost_per_1k_output": 0.0006,
+      "max_output_tokens": 8192,
+      "fallback": "standard"
+    },
+    "mistral": {
+      "description": "Mistral: EU-hosted, GDPR-compliant, voice agents",
+      "provider": "mistral",
+      "model": "mistral-small-latest",
+      "cli_name": null,
+      "cost_per_1k_input": 0.001,
+      "cost_per_1k_output": 0.003,
+      "max_output_tokens": 4096,
+      "fallback": "standard"
+    }
+  },
+  "agents": {
+    "_comment": "Map agent names to tiers. Customize for your team.",
+    "default": "standard"
+  },
+  "autonomous_jobs": {
+    "_comment": "Map cron jobs or autonomous agents to tiers.",
+    "nightly-scan": "local",
+    "daily-support": "standard",
+    "weekly-review": "standard"
+  },
+  "providers": {
+    "anthropic": {
+      "status": "active",
+      "api_key_env": "ANTHROPIC_API_KEY",
+      "models": ["claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"],
+      "base_url": "https://api.anthropic.com"
+    },
+    "google": {
+      "status": "active",
+      "api_key_env": "GOOGLE_API_KEY",
+      "models": ["gemini-2.5-flash", "gemini-2.5-pro"],
+      "base_url": "https://generativelanguage.googleapis.com"
+    },
+    "mistral": {
+      "status": "active",
+      "api_key_env": "MISTRAL_API_KEY",
+      "models": ["mistral-small-latest", "mistral-medium-latest"],
+      "base_url": "https://api.mistral.ai"
+    },
+    "openai": {
+      "status": "active",
+      "api_key_env": "OPENAI_API_KEY",
+      "models": ["gpt-4o", "gpt-4o-mini"],
+      "base_url": "https://api.openai.com"
+    },
+    "ollama": {
+      "status": "active",
+      "api_key_env": null,
+      "models": ["qwen3:8b", "qwen2.5:1.5b"],
+      "base_url": "http://localhost:11434"
+    }
+  },
+  "cost_limits": {
+    "_comment": "Daily and monthly limits. Alert at 80%.",
+    "daily_eur": 50,
+    "monthly_eur": 800,
+    "alert_threshold": 0.8
+  }
+}
