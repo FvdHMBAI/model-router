@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+      - name: Lint model-router.sh
+        run: shellcheck -s bash model-router.sh
+      - name: Lint install.sh
+        run: shellcheck -s bash install.sh
+      - name: Lint examples
+        run: shellcheck -s bash examples/*.sh || true
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install jq
+        run: sudo apt-get install -y jq
+      - name: Run tests
+        run: |
+          chmod +x tests/test-model-router.sh model-router.sh
+          bash tests/test-model-router.sh
