@@ -278,3 +278,14 @@ Contributions welcome. Please:
 ## License
 
 [MIT](LICENSE)
+
+---
+
+<p align="center">
+  Built by <a href="https://promptandbuild.de">Prompt & Build</a>.<br>
+  Part of <a href="https://github.com/FvdHMBAI/agent-stack">AgentStack</a>: the complete governance layer for AI agents.
+</p>
+
+<p align="center">
+  If model-router simplifies your LLM routing, consider giving it a <a href="https://github.com/FvdHMBAI/model-router">star</a>. It helps others find it.
+</p>
