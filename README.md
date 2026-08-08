@@ -275,6 +275,10 @@ Contributions welcome. Please:
 4. Run `bash tests/test-model-router.sh` before submitting
 5. Open a PR
 
+## Part of AgentStack
+
+This tool is free and always will be. For teams that need the full governance stack (GuardRail Pro + Compliance Shield + priority support), see [AgentStack Pro](https://github.com/FvdHMBAI/agent-stack/blob/main/BUNDLE.md) (EUR 79/dev/month).
+
 ## License
 
 [MIT](LICENSE)
