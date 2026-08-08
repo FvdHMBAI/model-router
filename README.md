@@ -1,11 +1,8 @@
-<h1 align="center">Model Router</h1>
+<p align="center">
+  <img src=".github/assets/banner.svg" alt="Model Router - Universal LLM routing for shell scripts" width="100%">
+</p>
 
 [![Part of AgentStack](https://img.shields.io/badge/Part%20of-AgentStack-blue?style=flat-square)](https://github.com/FvdHMBAI/agent-stack)
-
-<p align="center">
-  <strong>The LLM router that lives in your shell.</strong><br>
-  One config file. Every model. Zero dependencies beyond <code>bash</code> and <code>jq</code>.
-</p>
 
 <p align="center">
   <a href="https://github.com/FvdHMBAI/model-router/actions"><img src="https://github.com/FvdHMBAI/model-router/actions/workflows/ci.yml/badge.svg" alt="CI"></a>&nbsp;
