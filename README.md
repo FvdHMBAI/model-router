@@ -4,6 +4,7 @@
 
 [![CI](https://github.com/FvdHMBAI/model-router/actions/workflows/ci.yml/badge.svg)](https://github.com/FvdHMBAI/model-router/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/FvdHMBAI/model-router?style=social)](https://github.com/FvdHMBAI/model-router/stargazers)
 
 **The LLM router that lives in your shell.** One config file, every model, zero dependencies beyond `bash` and `jq`.
 
