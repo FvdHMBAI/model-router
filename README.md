@@ -8,6 +8,10 @@
 
 **The LLM router that lives in your shell.** One config file, every model, zero dependencies beyond `bash` and `jq`.
 
+<p align="center">
+  <img src="demo/demo.gif" alt="Model Router Demo" width="700">
+</p>
+
 ```bash
 eval $(model-router standard)
 echo $MODEL_ID  # claude-sonnet-5
