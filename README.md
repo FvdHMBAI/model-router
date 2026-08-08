@@ -1,34 +1,121 @@
-# model-router
+<h1 align="center">Model Router</h1>
 
 [![Part of AgentStack](https://img.shields.io/badge/Part%20of-AgentStack-blue?style=flat-square)](https://github.com/FvdHMBAI/agent-stack)
 
-[![CI](https://github.com/FvdHMBAI/model-router/actions/workflows/ci.yml/badge.svg)](https://github.com/FvdHMBAI/model-router/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/FvdHMBAI/model-router?style=social)](https://github.com/FvdHMBAI/model-router/stargazers)
-
-**The LLM router that lives in your shell.** One config file, every model, zero dependencies beyond `bash` and `jq`.
+<p align="center">
+  <strong>The LLM router that lives in your shell.</strong><br>
+  One config file. Every model. Zero dependencies beyond <code>bash</code> and <code>jq</code>.
+</p>
 
 <p align="center">
-  <img src="demo/demo.gif" alt="Model Router Demo" width="700">
+  <a href="https://github.com/FvdHMBAI/model-router/actions"><img src="https://github.com/FvdHMBAI/model-router/actions/workflows/ci.yml/badge.svg" alt="CI"></a>&nbsp;
+  <a href="https://github.com/FvdHMBAI/model-router/stargazers"><img src="https://img.shields.io/github/stars/FvdHMBAI/model-router?style=social" alt="GitHub Stars"></a>&nbsp;
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
 </p>
+
+<p align="center">
+  <a href="#the-story">Story</a> · 
+  <a href="#quick-start">Quick Start</a> · 
+  <a href="#how-it-compares">Comparison</a> · 
+  <a href="#tiers">Tiers</a> · 
+  <a href="#configuration">Config</a> · 
+  <a href="#the-agentstack-ecosystem">Ecosystem</a>
+</p>
+
+---
+
+## The Story
+
+When Anthropic shipped Claude Sonnet 5, we updated one JSON file. 30 scripts, 225 cron jobs, 5 MCP servers picked up the new model instantly. Zero downtime. Zero grep. Zero 2 AM incidents.
+
+The week before, a friend's team spent two days hunting down hardcoded model names across their automation stack. They found most of them. One cron job broke at 3 AM because nobody remembered the `claude-sonnet-4` reference buried in a health check script.
+
+That's the problem Model Router solves. Not with a Python proxy. Not with a SaaS gateway. With ~300 lines of bash.
+
+```
+  ┌──────────────────────────────────────────────────────────────┐
+  │  $ eval $(model-router standard)                             │
+  │  $ echo "$MODEL_ID $MODEL_PROVIDER $MODEL_EFFORT"           │
+  │                                                              │
+  │  claude-sonnet-5 anthropic medium                            │
+  │                                                              │
+  │  $ eval $(model-router heavy)                                │
+  │  $ echo "$MODEL_ID"                                          │
+  │                                                              │
+  │  claude-opus-5                                               │
+  │                                                              │
+  │  $ eval $(model-router local)                                │
+  │  $ echo "$MODEL_ID $MODEL_PROVIDER"                          │
+  │                                                              │
+  │  qwen3:8b ollama                                             │
+  └──────────────────────────────────────────────────────────────┘
+```
+
+Scripts say `standard`, not `claude-sonnet-5`. The mapping lives in one config. When the model changes, the config changes. Everything else stays.
+
+---
+
+<p align="center">
+  <img src="demo/demo.gif" alt="Model Router Demo: routing models from the command line" width="700">
+</p>
+
+---
+
+## The Two Ideas
+
+Model Router fixes the hardcoded-model-name problem with two principles:
+
+1. **Tiers, not model names.** Your scripts request a capability level (`standard`, `heavy`, `local`). The config resolves it to a specific model. When providers ship updates, you change one file.
+
+2. **Automatic fallback.** Provider down? Config corrupt? Safe defaults kick in. Your 2 AM cron job survives.
+
+## Quick Start
+
+```bash
+git clone https://github.com/FvdHMBAI/model-router.git
+cd model-router && ./install.sh
+```
+
+Or just copy two files:
+
+```bash
+cp model-router.sh /usr/local/bin/model-router
+cp model-routing.json ~/.config/model-router/model-routing.json
+export MODEL_ROUTER_CONFIG="$HOME/.config/model-router/model-routing.json"
+```
+
+Then use it:
+
+```bash
+# Standard task (reviews, tickets, content)
+eval $(model-router standard)
+echo "$MODEL_ID"        # claude-sonnet-5
+
+# Heavy task (debugging, architecture)
+eval $(model-router heavy)
+# -> claude-opus-5, effort=high
+
+# Free local model (triage, classification)
+eval $(model-router local)
+# -> qwen3:8b via Ollama
+```
+
+Use it in an API call:
 
 ```bash
 eval $(model-router standard)
-echo $MODEL_ID  # claude-sonnet-5
+curl -s https://api.anthropic.com/v1/messages \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "content-type: application/json" \
+  -d "$(jq -n \
+    --arg model "$MODEL_ID" \
+    --argjson max_tokens "$MODEL_MAX_TOKENS" \
+    '{model: $model, max_tokens: $max_tokens,
+      messages: [{role: "user", content: "Hello"}]}')"
 ```
 
-When Anthropic ships a new model, you update **one JSON file** — not 30 scripts.
-
-## Why model-router?
-
-Every team running AI automation hits the same problem: model names hardcoded across dozens of scripts. When `claude-sonnet-4` becomes `claude-sonnet-5`, you grep through everything, miss one, and it breaks at 2 AM.
-
-Model Router fixes this with two ideas:
-
-1. **Tiers, not model names.** Scripts say `standard`, not `claude-sonnet-5`. The mapping lives in one config.
-2. **Automatic fallback.** Provider down? Config corrupt? Safe defaults kick in. Your 2 AM cron job doesn't die.
-
-## How it compares
+## How It Compares
 
 | Feature | model-router | LiteLLM | OpenRouter | Portkey |
 |---------|:---:|:---:|:---:|:---:|
@@ -47,66 +134,18 @@ Model Router fixes this with two ideas:
 
 **When to use something else:** You need a unified OpenAI-compatible API proxy, SDK support in Python/JS, or request-level load balancing across model replicas.
 
-## Install
+## In Production
 
-```bash
-git clone https://github.com/FvdHMBAI/model-router.git
-cd model-router
-./install.sh
-```
+Model Router runs in production across our infrastructure:
 
-Or just copy two files:
-
-```bash
-cp model-router.sh /usr/local/bin/model-router
-cp model-routing.json ~/.config/model-router/model-routing.json
-export MODEL_ROUTER_CONFIG="$HOME/.config/model-router/model-routing.json"
-```
-
-## Quick start
-
-```bash
-# Route a standard task
-eval $(model-router standard)
-echo "$MODEL_ID"        # claude-sonnet-5
-echo "$MODEL_PROVIDER"  # anthropic
-echo "$MODEL_EFFORT"    # medium
-
-# Heavy task — complex debugging, architecture
-eval $(model-router heavy)
-# -> claude-opus-5, effort=high
-
-# Free local model — triage, classification
-eval $(model-router local)
-# -> qwen3:8b via Ollama
-
-# Use in an API call
-eval $(model-router standard)
-curl -s https://api.anthropic.com/v1/messages \
-  -H "x-api-key: $ANTHROPIC_API_KEY" \
-  -H "anthropic-version: 2023-06-01" \
-  -H "content-type: application/json" \
-  -d "$(jq -n \
-    --arg model "$MODEL_ID" \
-    --argjson max_tokens "$MODEL_MAX_TOKENS" \
-    '{model: $model, max_tokens: $max_tokens,
-      messages: [{role: "user", content: "Hello"}]}')"
-```
-
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `model-router <tier>` | Output eval-safe variables for a tier |
-| `model-router <agent>` | Resolve agent name to tier to model |
-| `model-router info` | Show full configuration |
-| `model-router health` | Check all provider endpoints |
-| `model-router recommend <name>` | Show routing details for an agent or job |
-| `model-router cost-report` | Usage summary by provider, tier, and day |
-| `model-router benchmark [tier]` | Latency test across providers |
-| `model-router init` | Create default config in `~/.config/model-router/` |
-| `model-router --version` | Show version |
-| `model-router --help` | Show usage |
+| Metric | Value |
+|--------|-------|
+| Cron jobs routed | **225** |
+| Running containers | **81** |
+| Routing tiers | **7** (heavy, standard, light, local, local-fast, gemini, mistral) |
+| Providers supported | **5** (Anthropic, Google, Mistral, OpenAI, Ollama) |
+| Lines of code | **~300** |
+| Config files to update | **1** |
 
 ## Tiers
 
@@ -122,7 +161,20 @@ curl -s https://api.anthropic.com/v1/messages \
 
 All tiers are customizable. Add your own in `model-routing.json`.
 
-## Output variables
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `model-router <tier>` | Output eval-safe variables for a tier |
+| `model-router <agent>` | Resolve agent name to tier to model |
+| `model-router info` | Show full configuration |
+| `model-router health` | Check all provider endpoints |
+| `model-router recommend <name>` | Show routing details for an agent or job |
+| `model-router cost-report` | Usage summary by provider, tier, and day |
+| `model-router benchmark [tier]` | Latency test across providers |
+| `model-router init` | Create default config in `~/.config/model-router/` |
+
+## Output Variables
 
 Every routing call sets these eval-safe shell variables:
 
@@ -137,21 +189,7 @@ Every routing call sets these eval-safe shell variables:
 | `MODEL_CLI_NAME` | `sonnet` | Short name for CLI tools |
 | `MODEL_EFFORT` | `medium` | Reasoning effort hint |
 
-## Providers
-
-5 providers supported out of the box:
-
-| Provider | Models | Notes |
-|----------|--------|-------|
-| Anthropic | Opus 5, Sonnet 5, Haiku 4.5 | Primary |
-| Google | Gemini 2.5 Flash/Pro | Cross-review, large context |
-| Mistral | Small, Medium | EU-hosted, GDPR |
-| OpenAI | GPT-4o, GPT-4o-mini | Alternative |
-| Ollama | Any local model | Free, self-hosted |
-
-Add more by editing the `providers` section in your config.
-
-## Agent & job mapping
+## Agent & Job Mapping
 
 Map your agents and cron jobs to tiers:
 
@@ -183,9 +221,9 @@ Model Router is designed for unattended operation:
 - **Missing config?** Safe hardcoded defaults (heavy=opus, standard=sonnet, light=haiku, local=qwen)
 - **Corrupt JSON?** Falls back to defaults, prints `CONFIG_DEGRADED='true'` to stderr
 - **Provider down?** Follows the `fallback` chain defined per tier, logs the failover to stderr
-- **Eval injection?** All output values are sanitized — only alphanumeric, dots, colons, hyphens pass through
+- **Eval injection?** All output values are sanitized. Only alphanumeric characters, dots, colons, and hyphens pass through
 
-## Cost tracking
+## Cost Tracking
 
 Every routing call logs to `~/.model-router/usage.log`:
 
@@ -207,7 +245,7 @@ model-router cost-report
 #   heavy          44 requests
 ```
 
-## Provider health checks
+## Provider Health Checks
 
 ```bash
 model-router health
@@ -218,14 +256,6 @@ model-router health
 #   openai       NO KEY   (set OPENAI_API_KEY)
 #   ollama       OK
 ```
-
-## Examples
-
-See the [`examples/`](examples/) directory:
-
-- **[ci-pipeline.sh](examples/ci-pipeline.sh)** — Use model-router in CI/CD
-- **[cron-job.sh](examples/cron-job.sh)** — Overnight batch processing with local-first routing
-- **[multi-provider.sh](examples/multi-provider.sh)** — Provider failover and health demo
 
 ## Configuration
 
@@ -264,6 +294,34 @@ Override config location:
 export MODEL_ROUTER_CONFIG="/path/to/your/model-routing.json"
 ```
 
+## Examples
+
+See the [`examples/`](examples/) directory:
+
+- **[ci-pipeline.sh](examples/ci-pipeline.sh)** - Use model-router in CI/CD
+- **[cron-job.sh](examples/cron-job.sh)** - Overnight batch processing with local-first routing
+- **[multi-provider.sh](examples/multi-provider.sh)** - Provider failover and health demo
+
+## The AgentStack Ecosystem
+
+Model Router is one piece. The full stack:
+
+| Tool | What it does | Link |
+|------|-------------|------|
+| **[GuardRail](https://github.com/FvdHMBAI/guardrail)** | Pre-execution security for AI agents. 172 guards, 96% enforcement rate. | [Repo](https://github.com/FvdHMBAI/guardrail) |
+| **Model Router** | LLM routing from your shell. One config, every model. | You're here |
+| **[NightShift](https://github.com/FvdHMBAI/nightshift)** | Overnight code improvement. Lint, types, security, docs. | [Repo](https://github.com/FvdHMBAI/nightshift) |
+| **[Graphify](https://github.com/FvdHMBAI/graphify-toolkit)** | Turn any codebase into a queryable knowledge graph. | [Repo](https://github.com/FvdHMBAI/graphify-toolkit) |
+| **[Autonomie OS](https://github.com/FvdHMBAI/autonomie-os)** | Self-improving AI agent framework. Learns overnight. | [Repo](https://github.com/FvdHMBAI/autonomie-os) |
+
+All tools are open source. All work standalone. Together they form a governance layer for AI agents.
+
+## Learn More
+
+Want to understand how Model Router fits into a complete AI governance system? The free course covers model routing in Lesson 8:
+
+**[KI-Governance lernen (18 Lektionen, kostenlos)](https://lernen.promptandbuild.de)**
+
 ## Requirements
 
 - `bash` 4+
@@ -280,10 +338,6 @@ Contributions welcome. Please:
 4. Run `bash tests/test-model-router.sh` before submitting
 5. Open a PR
 
-## Part of AgentStack
-
-This tool is free and always will be. For teams that need the full governance stack (GuardRail Pro + Compliance Shield + priority support), see [AgentStack Pro](https://github.com/FvdHMBAI/agent-stack/blob/main/BUNDLE.md) (EUR 79/dev/month).
-
 ## License
 
 [MIT](LICENSE)
@@ -293,8 +347,4 @@ This tool is free and always will be. For teams that need the full governance st
 <p align="center">
   Built by <a href="https://promptandbuild.de">Prompt & Build</a>.<br>
   Part of <a href="https://github.com/FvdHMBAI/agent-stack">AgentStack</a>: the complete governance layer for AI agents.
-</p>
-
-<p align="center">
-  If model-router simplifies your LLM routing, consider giving it a <a href="https://github.com/FvdHMBAI/model-router">star</a>. It helps others find it.
 </p>
